@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CacheOut API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            background-color: #3d3d3d;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #4d4d4d;
+            color: white;
+        }
+        .log {
+            background-color: #1e1e1e;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+        .warning { color: #ff9800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CacheOut API Test</h1>
+        <p class="info">Testing frontend connection to backend API</p>
+        
+        <div class="test-section">
+            <h3>Configuration</h3>
+            <label for="apiBase">API Base URL:</label>
+            <input type="text" id="apiBase" value="http://localhost:8000/api/v1" placeholder="API Base URL">
+            
+            <label for="adminToken">Admin Token:</label>
+            <input type="text" id="adminToken" placeholder="Enter your admin token" required>
+        </div>
+
+        <div class="test-section">
+            <h2>API Endpoints Test</h2>
+            <button onclick="testJobs()">Test GET /jobs</button>
+            <button onclick="testWorkers()">Test GET /workers</button>
+            <button onclick="testRegister()">Test POST /register</button>
+            <button onclick="testSubmit()">Test POST /submit</button>
+        </div>
+
+        <div class="test-section">
+            <h2>CORS Test</h2>
+            <button onclick="testCORS()">Test CORS Headers</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            logDiv.innerHTML += `[${timestamp}] <span class="${className}">${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function getHeaders() {
+            const adminToken = document.getElementById('adminToken').value;
+            if (!adminToken) {
+                log('❌ Admin token is required', 'error');
+                return null;
+            }
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${adminToken}`
+            };
+        }
+
+        function getBaseUrl() {
+            return document.getElementById('apiBase').value;
+        }
+
+        async function testJobs() {
+            const headers = getHeaders();
+            if (!headers) return;
+
+            log('Testing GET /jobs...', 'info');
+            try {
+                const response = await fetch(`${getBaseUrl()}/jobs`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ GET /jobs successful - Found ${data.jobs ? data.jobs.length : 0} jobs`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ GET /jobs failed - Status: ${response.status}, Error: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ GET /jobs exception: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWorkers() {
+            const headers = getHeaders();
+            if (!headers) return;
+
+            log('Testing GET /workers...', 'info');
+            try {
+                const response = await fetch(`${getBaseUrl()}/workers`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ GET /workers successful - Found ${data.workers ? data.workers.length : 0} workers`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ GET /workers failed - Status: ${response.status}, Error: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ GET /workers exception: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRegister() {
+            const headers = getHeaders();
+            if (!headers) return;
+
+            log('Testing POST /register...', 'info');
+            try {
+                const workerData = {
+                    worker_id: 'test-worker-html',
+                    hostname: 'test-machine',
+                    cpu_cores: 4,
+                    ram_mb: 8192,
+                    status: 'idle'
+                };
+
+                const response = await fetch(`${getBaseUrl()}/register`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(workerData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ POST /register successful - ${data.message}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ POST /register failed - Status: ${response.status}, Error: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ POST /register exception: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSubmit() {
+            const headers = getHeaders();
+            if (!headers) return;
+
+            log('Testing POST /submit...', 'info');
+            try {
+                const jobData = {
+                    title: 'Test Job from HTML',
+                    description: 'Test job submitted from HTML test page',
+                    code: 'echo "Hello from test job"',
+                    priority: 3,
+                    required_cores: 2,
+                    required_ram_mb: 4096,
+                    command: 'echo "Hello from test job"',
+                    parameters: '{}',
+                    buyer_id: 'test-buyer-html'
+                };
+
+                const response = await fetch(`${getBaseUrl()}/submit`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(jobData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ POST /submit successful - Job ID: ${data.job_id}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ POST /submit failed - Status: ${response.status}, Error: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ POST /submit exception: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCORS() {
+            log('Testing CORS headers...', 'info');
+            try {
+                const response = await fetch(`${getBaseUrl()}/health`, {
+                    method: 'GET'
+                });
+                
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                if (corsHeader) {
+                    log(`✅ CORS headers present - Access-Control-Allow-Origin: ${corsHeader}`, 'success');
+                } else {
+                    log('⚠️ CORS headers not found', 'warning');
+                }
+            } catch (error) {
+                log(`❌ CORS test exception: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            log('🚀 CacheOut API Test Page Loaded', 'info');
+            log('Please enter your admin token and click the test buttons', 'info');
+        };
+    </script>
+</body>
+</html> 

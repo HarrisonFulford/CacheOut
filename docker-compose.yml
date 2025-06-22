@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: cacheout_db
+      POSTGRES_USER: cacheout_user
+      POSTGRES_PASSWORD: cacheout_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cacheout_user -d cacheout_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend coordinator
+  coordinator:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://cacheout_user:cacheout_password@db:5432/cacheout_db
+      - HOST=0.0.0.0
+      - PORT=8000
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-your_secure_token_here}
+      - DEBUG=True
+      - LOG_LEVEL=INFO
+      - WORKER_TIMEOUT_SECONDS=60
+      - MAX_WORKERS=100
+      - COST_PER_CORE=0.1
+      - COST_PER_100MB_RAM=0.001
+      - DEFAULT_STARTING_CREDITS=100.0
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  # Frontend (React app)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - coordinator
+    restart: unless-stopped
+
+  # Worker node (can be scaled)
+  worker:
+    build:
+      context: ./backend
+      dockerfile: worker.Dockerfile
+    environment:
+      - COORDINATOR_URL=http://coordinator:8000/api/v1
+    depends_on:
+      - coordinator
+    restart: unless-stopped
+    # Uncomment to run multiple workers
+    # deploy:
+    #   replicas: 3
+
+volumes:
+  postgres_data: 
