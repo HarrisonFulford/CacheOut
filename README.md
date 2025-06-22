@@ -372,17 +372,13 @@ docker-compose exec db psql -U cacheout_user -d cacheout_db
 - [ ] Load balancing
 - [ ] Auto-scaling workers
 
-## 🤝 Contributing
+## 🤝 Contributing (hold your horses pal)
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ## 🆘 Support
 
