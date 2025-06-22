@@ -2,6 +2,9 @@
 
 A production-ready distributed compute marketplace that allows users to buy and sell compute resources. The system consists of a FastAPI backend coordinator, a React frontend marketplace interface, and containerized testing environment.
 
+## Demo:
+https://www.youtube.com/watch?v=QT-R14xsmJw
+
 ## 🚀 Features
 
 ### Core Functionality
